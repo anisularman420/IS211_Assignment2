@@ -2,46 +2,37 @@ import urllib.request
 import csv
 import argparse
 import logging
-from datetime import datetime
+import datetime
 
-
-def downloadData( url):
+def downloadData(url):
     try:
-        with urllib.request.urlopen(url) as response:
-            data = response.read().decode('utf-8')
-            return data
+        response = urllib.request.urlopen(url)
+        data = response.read().decode("utf-8")
+        return data
     except Exception as e:
-        logging.error(f"Error downloading data from {url}: {e}")
-        return None
+        print(f"Error downloading data: {e}")
+        exit(1)
 
-
-def processData(csv_data):
+def processData(data):
     person_data = {}
-    try:
-        csv_reader = csv.reader(csv_data.splitlines())
-        next(csv_reader)
-        for row in csv_reader:
-            if len(row) == 3:
-                id_number, name, birthday_str = row
-                try:
-                    id_number = int(id_number)
-                    birthday = datetime.strptime(birthday_str, '%d/%m/%Y').date()
-                    person_data[id_number] = (name, birthday)
-                except (ValueError, IndexError, ValueError) as e:
-                    logging.error(f"Error processing line: {row}, Error: {e}")
-    except Exception as e:
-        logging.error(f"Error processing CSV data: {e}")
-
+    lines = data.split('\n')
+    for line in lines:
+        if line:
+            try:
+                id, name, birthday = line.split(',')
+                person_data[int(id)] = (name, birthday)
+            except ValueError:
+                logging.error(f"Invalid data format: {line}")
     return person_data
 
-
 def displayPerson(id_number, person_data):
-    if id_number in person_data:
+    if id_number <= 0:
+        print("ID must be a positive number.")
+    elif id_number in person_data:
         name, birthday = person_data[id_number]
-        print(f"Person #{id_number} is {name} with a birthday of {birthday.strftime('%Y%m%d')}")
+        print(f"Name: {name}, Birthday: {birthday}")
     else:
-        print(f"No user found with ID #{id_number}")
-
+        print("Person not found.")
 
 def main():
     parser = argparse.ArgumentParser(description="Assignment 2 - Python Standard Library")
@@ -54,7 +45,6 @@ def main():
     csv_data = downloadData(csv_url)
 
     if csv_data:
-
         person_data = processData(csv_data)
 
         while True:
@@ -66,7 +56,5 @@ def main():
             except ValueError:
                 print("Invalid input. Please enter a valid ID number.")
 
-
 if __name__ == "__main__":
     main()
-
